@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="bs">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Prijava - Workshop Dashboard</title>
+    
+    <!-- Učitavanje Tailwind CSS-a -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Google Fonts - Urbanist -->
+    <link href="https://fonts.googleapis.com/css2?family=Urbanist:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+    
+    <style>
+        /* Osnovni stilovi i font */
+        body {
+            font-family: 'Urbanist', sans-serif;
+            color: #1f2937;
+            /* Postavljanje pozadinske slike */
+            background-image: url('slika.png'); /* slika.png zamijenjena sa image_eb3788.jpg */
+            background-size: cover;
+            background-position: center;
+            background-repeat: no-repeat;
+        }
+
+        /* Sekcije - Lagani tamni panel za bolji kontrast na svijetloj slici */
+        .glass-panel {
+            background: rgba(255, 255, 255, 0.95); /* Skoro bijela neprozirna pozadina */
+            backdrop-filter: blur(8px);
+            border: 1px solid rgba(255, 255, 255, 0.5);
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+        }
+
+        /* Akcenti */
+        .accent-text { color: #06b6d4; } /* Tirkizno/Svjetlo plava */
+        
+        .login-input {
+            border-color: #d1d5db;
+        }
+    </style>
+</head>
+<body class="min-h-screen flex items-center justify-center p-4">
+
+    <!-- Login forma centrirana preko pozadine -->
+    <div class="glass-panel p-8 md:p-10 rounded-xl max-w-sm w-full text-center">
+        
+        <!-- Logo (image_eb5174.png) -->
+        <img src="logo.png" alt="Logo Agencije" class="h-16 w-auto mx-auto mb-6 rounded-lg object-contain" onerror="this.onerror=null; this.src='https://placehold.co/64x64/06b6d4/ffffff?text=LOGO';">
+
+        <h1 class="text-3xl font-extrabold mb-2 accent-text">Prijava</h1>
+        <p class="text-gray-500 mb-8">Unesite podatke za pristup kontrolnoj tabli.</p>
+
+        <form onsubmit="handleLogin(event)" class="space-y-6">
+            <div>
+                <input type="text" id="username" placeholder="Korisničko ime (admin)" required
+                       class="login-input w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 text-gray-800">
+            </div>
+            <div>
+                <input type="password" id="password" placeholder="Lozinka (password123)" required
+                       class="login-input w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 text-gray-800">
+            </div>
+            <button type="submit" class="w-full bg-blue-600 text-white p-3 rounded-lg font-semibold hover:bg-blue-700 transition duration-200 shadow-lg">
+                Prijavi se
+            </button>
+        </form>
+        <p id="login-error" class="text-red-500 mt-4 text-sm" style="display: none;">Pogrešno korisničko ime ili lozinka.</p>
+    </div>
+
+    <script>
+        // HARDKODOVANE KREDENICE
+        const USERNAME = 'admin';
+        const PASSWORD = 'password123';
+        
+        // **SIGURNOSNA VALIDACIJA:** Provjera da li je korisnik već prijavljen.
+        if (localStorage.getItem('isLoggedIn') === 'true') {
+            window.location.href = 'dashboard.html';
+        }
+
+        function handleLogin(event) {
+            event.preventDefault();
+            const usernameInput = document.getElementById('username').value;
+            const passwordInput = document.getElementById('password').value;
+            const errorEl = document.getElementById('login-error');
+
+            if (usernameInput === USERNAME && passwordInput === PASSWORD) {
+                // Uspješna prijava: postavi status u localStorage i preusmjeri
+                localStorage.setItem('isLoggedIn', 'true');
+                errorEl.style.display = 'none';
+                window.location.href = 'dashboard.html';
+            } else {
+                // Neuspješna prijava
+                errorEl.style.display = 'block';
+            }
+        }
+    </script>
+
+</body>
+</html>

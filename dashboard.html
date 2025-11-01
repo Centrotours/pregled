@@ -1,0 +1,786 @@
+<!DOCTYPE html>
+<html lang="bs">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Dashboard - Workshop Analitika</title>
+
+  <!-- Tailwind (CDN) -->
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <!-- Google Font -->
+  <link href="https://fonts.googleapis.com/css2?family=Urbanist:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+
+  <style>
+    :root{--c-accent:#06b6d4;--c-gold:#d97706}
+    body{font-family:'Urbanist',sans-serif;background:#f3f4f6;color:#1f2937}
+    .glass-panel{background:rgba(255,255,255,.92);backdrop-filter:blur(6px);border:1px solid rgba(209,213,219,.8);box-shadow:0 4px 12px rgba(0,0,0,.06)}
+    .modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.55);display:none;justify-content:center;align-items:center;z-index:1000;padding:16px}
+    .modal-content{background:#fff;color:#1f2937;padding:20px;border-radius:14px;max-width:760px;width:100%;max-height:90vh;overflow:auto;box-shadow:0 12px 44px rgba(0,0,0,.35);border:1px solid #4DD0E1}
+    .accent-text{color:var(--c-accent)}
+    .card-value{font-weight:800;color:var(--c-gold)}
+    .table-header{background:#e5e7eb;color:#1f2937}
+    .table-row:nth-child(even){background:#f9fafb}
+    .table-row:nth-child(odd){background:#fff}
+    .tap{min-height:44px}
+    .chip{display:inline-flex;align-items:center;border:1px solid #e5e7eb;border-radius:9999px;padding:6px 10px;font-size:12px;gap:6px}
+    .chip-btn{font-size:11px;padding:0 6px;border-left:1px solid #e5e7eb}
+    .kbd{border:1px solid #d1d5db;border-bottom-width:2px;border-radius:6px;padding:0 6px;font-size:12px;background:#fff}
+    .sort-btn{cursor:pointer}
+    .sort-btn .arrow{opacity:.35}
+    .sort-active .arrow{opacity:1}
+    /* Loading overlay */
+    #loadingOverlay{position:fixed;inset:0;background:rgba(243,244,246,.98);z-index:2000;display:flex;align-items:center;justify-content:center;flex-direction:column}
+    .spinner{width:56px;height:56px;border:6px solid #e5e7eb;border-top-color:var(--c-accent);border-radius:50%;animation:spin 1s linear infinite}
+    @keyframes spin{to{transform:rotate(360deg)}}
+    /* Sticky controls on mobile */
+    .sticky-controls{position:sticky;top:8px;z-index:50}
+  </style>
+</head>
+
+<body class="min-h-screen p-3 sm:p-4 md:p-6" onload="checkAuthAndFetch()">
+
+  <!-- Loading overlay -->
+  <div id="loadingOverlay" role="status" aria-live="polite">
+    <div class="spinner"></div>
+    <p class="mt-4 text-base sm:text-lg font-semibold accent-text">Učitavanje podataka...</p>
+  </div>
+
+  <!-- APP CONTENT -->
+  <div id="appContent" class="hidden space-y-4 sm:space-y-6">
+    <!-- Header -->
+    <header class="glass-panel rounded-xl p-3 sm:p-4 md:p-5">
+      <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+        <div class="flex items-center gap-3">
+          <img src="logo.png" alt="Logo Agencije" class="h-9 w-9 sm:h-11 sm:w-11 rounded-lg object-contain"
+               onerror="this.onerror=null; this.src='https://placehold.co/44x44/06b6d4/ffffff?text=LOGO';">
+          <div>
+            <h1 class="text-2xl sm:text-3xl md:text-4xl font-extrabold leading-tight">Kontrolna Tabla</h1>
+            <p class="text-xs sm:text-sm font-light mt-0.5 text-gray-500">Pregled stanja prijava i ključnih metrika.</p>
+          </div>
+        </div>
+        <div class="flex items-center gap-2 sm:gap-3">
+          <span class="hidden md:inline text-xs text-gray-500">Pritisni <span class="kbd">/</span> za pretragu</span>
+          <button onclick="logout()" class="tap px-3 py-2 text-sm bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition">Odjava</button>
+        </div>
+      </div>
+    </header>
+
+    <!-- KPI + Distribucije -->
+    <section id="main-content" class="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">
+      <!-- Distribucije gradova -->
+      <div class="glass-panel p-4 sm:p-5 rounded-xl order-2 lg:order-1 space-y-5">
+        <div>
+          <h2 class="text-lg sm:text-xl font-bold mb-3 sm:mb-4 accent-text">Prijava po Gradu (Agencije)</h2>
+          <div id="city-distribution" class="space-y-3 h-72 overflow-y-auto">
+            <p class="text-gray-500 text-sm">Čekam podatke...</p>
+          </div>
+        </div>
+        <div>
+          <h2 class="text-lg sm:text-xl font-bold mb-3 sm:mb-4 accent-text">Ukupan broj osoba po Gradu</h2>
+          <div id="city-people" class="space-y-3 h-72 overflow-y-auto">
+            <p class="text-gray-500 text-sm">Čekam podatke...</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- KPI -->
+      <div class="glass-panel p-4 sm:p-5 rounded-xl lg:col-span-2 order-1 lg:order-2">
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4">
+          <div class="glass-panel p-4 rounded-xl">
+            <p class="text-[11px] sm:text-xs uppercase font-semibold text-gray-500">Ukupno prijava (Agencija)</p>
+            <p id="totalReg" class="card-value text-3xl sm:text-4xl mt-1">0</p>
+          </div>
+          <div class="glass-panel p-4 rounded-xl">
+            <p class="text-[11px] sm:text-xs uppercase font-semibold text-gray-500">Ukupno osoba na B2B</p>
+            <p id="totalPeople" class="card-value text-3xl sm:text-4xl mt-1">0</p>
+          </div>
+          <div class="glass-panel p-4 rounded-xl">
+            <p class="text-[11px] sm:text-xs uppercase font-semibold text-gray-500">Potvrđena Networking Večera</p>
+            <p id="dinnerConfirmed" class="card-value text-3xl sm:text-4xl mt-1">0</p>
+          </div>
+          <div class="glass-panel p-4 rounded-xl">
+            <p class="text-[11px] sm:text-xs uppercase font-semibold text-gray-500">Potreban Smještaj</p>
+            <p id="accommodationNeeded" class="card-value text-3xl sm:text-4xl mt-1">0</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Kontrole (sticky na mobitelu) -->
+    <section class="sticky-controls">
+      <div class="glass-panel rounded-xl p-3 sm:p-4 space-y-3">
+        <div class="flex flex-col lg:flex-row gap-3 lg:items-center">
+          <div class="flex flex-wrap gap-2 items-center">
+            <p class="font-semibold mr-2 text-sm">Filteri:</p>
+
+            <select id="filterDinner" class="tap w-full xs:w-auto sm:w-auto bg-gray-100 text-gray-800 p-2 border rounded-lg text-sm" onchange="applyFilters()">
+              <option value="">Večera: Svi</option>
+              <option value="DA">Večera: DA</option>
+              <option value="NE">Večera: NE</option>
+            </select>
+
+            <select id="filterAccommodation" class="tap w-full xs:w-auto sm:w-auto bg-gray-100 text-gray-800 p-2 border rounded-lg text-sm" onchange="applyFilters()">
+              <option value="">Smještaj: Svi</option>
+              <option value="DA">Smještaj: DA</option>
+              <option value="NE">Smještaj: NE</option>
+            </select>
+
+            <select id="filterCity" class="tap w-full xs:w-auto sm:w-auto bg-gray-100 text-gray-800 p-2 border rounded-lg text-sm" onchange="applyFilters()">
+              <option value="">Grad: Svi</option>
+            </select>
+
+            <button onclick="filterNotes()" class="tap bg-yellow-500 text-gray-900 font-semibold p-2 rounded-lg text-sm hover:bg-yellow-400 transition w-full sm:w-auto">
+              Napomene
+            </button>
+            <button onclick="resetFilters()" class="tap bg-red-500 text-white font-semibold p-2 rounded-lg text-sm hover:bg-red-600 transition w-full sm:w-auto">
+              Resetuj
+            </button>
+          </div>
+
+          <div class="flex flex-col md:flex-row gap-2 md:items-center md:ml-auto w-full md:w-auto">
+            <input id="quickSearch" type="text" placeholder="Pretraga: agencija/kontakt/grad/e-mail/telefon" class="tap w-full md:w-72 bg-white border border-gray-300 rounded-lg p-2 text-sm" oninput="applyFilters()" />
+            <div class="flex gap-2">
+              <button onclick="downloadDataAsCSV(processedData)" class="tap w-full md:w-auto bg-green-600 text-white font-semibold p-2 rounded-lg text-sm hover:bg-green-700 transition">
+                CSV/Excel
+              </button>
+              <button onclick="downloadProcessedJSON()" class="tap w-full md:w-auto bg-blue-600 text-white font-semibold p-2 rounded-lg text-sm hover:bg-blue-700 transition">
+                JSON
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Auto refresh -->
+        <div class="flex flex-wrap items-center gap-3 text-sm">
+          <label class="inline-flex items-center gap-2">
+            <input id="autoRefresh" type="checkbox" class="w-4 h-4" onchange="toggleAutoRefresh(this.checked)">
+            <span>Auto-osvježavanje svakih <b>60s</b></span>
+          </label>
+          <button class="tap bg-gray-200 hover:bg-gray-300 text-gray-800 px-3 py-2 rounded-lg" onclick="manualRefresh()">Osvježi sada</button>
+          <span id="lastUpdate" class="text-xs text-gray-500"></span>
+        </div>
+      </div>
+    </section>
+
+    <!-- Tabela + sortiranje + paginacija -->
+    <section class="pb-2">
+      <div class="glass-panel p-3 sm:p-4 rounded-xl overflow-x-auto">
+        <table class="min-w-full text-left text-xs sm:text-sm whitespace-nowrap">
+          <thead class="table-header">
+            <tr>
+              <th class="px-3 sm:px-4 py-3 font-semibold">#</th>
+              <th class="px-3 sm:px-4 py-3 font-semibold sort-btn" data-sort="agency" onclick="sortBy('agency')">Agencija <span class="arrow">▲▼</span></th>
+              <th class="px-3 sm:px-4 py-3 font-semibold sort-btn" data-sort="city" onclick="sortBy('city')">Grad <span class="arrow">▲▼</span></th>
+              <th class="px-3 sm:px-4 py-3 font-semibold hidden sm:table-cell sort-btn" data-sort="name" onclick="sortBy('name')">Kontakt <span class="arrow">▲▼</span></th>
+              <th class="px-3 sm:px-4 py-3 font-semibold hidden md:table-cell">Pozicija</th>
+              <th class="px-3 sm:px-4 py-3 font-semibold sort-btn" data-sort="phone" onclick="sortBy('phone')">Telefon <span class="arrow">▲▼</span></th>
+              <th class="px-3 sm:px-4 py-3 font-semibold hidden md:table-cell">E-mail</th>
+              <th class="px-3 sm:px-4 py-3 font-semibold sort-btn" data-sort="people" onclick="sortBy('people')">B2B <span class="arrow">▲▼</span></th>
+              <th class="px-3 sm:px-4 py-3 font-semibold">Večera</th>
+              <th class="px-3 sm:px-4 py-3 font-semibold hidden sm:table-cell">Smještaj</th>
+              <th class="px-3 sm:px-4 py-3 font-semibold hidden md:table-cell">Nap.</th>
+              <th class="px-3 sm:px-4 py-3 font-semibold">Akcija</th>
+            </tr>
+          </thead>
+          <tbody id="registrations-table-body">
+            <tr><td colspan="12" class="text-center py-4 text-gray-500">Učitavanje podataka...</td></tr>
+          </tbody>
+        </table>
+
+        <!-- Pagination -->
+        <div class="flex flex-wrap items-center justify-between mt-3 gap-2">
+          <div class="text-xs text-gray-600">
+            <span id="pageInfo">Stranica 1/1</span> • Po stranici:
+            <select id="pageSize" class="border rounded px-1 py-1 text-xs" onchange="changePageSize(this.value)">
+              <option>10</option><option selected>25</option><option>50</option><option>100</option>
+            </select>
+          </div>
+          <div class="flex gap-2">
+            <button class="tap px-3 py-2 bg-gray-200 rounded hover:bg-gray-300 text-sm" onclick="gotoPage('first')">« Prva</button>
+            <button class="tap px-3 py-2 bg-gray-200 rounded hover:bg-gray-300 text-sm" onclick="gotoPage('prev')">‹ Nazad</button>
+            <button class="tap px-3 py-2 bg-gray-200 rounded hover:bg-gray-300 text-sm" onclick="gotoPage('next')">Naprijed ›</button>
+            <button class="tap px-3 py-2 bg-gray-200 rounded hover:bg-gray-300 text-sm" onclick="gotoPage('last')">Zadnja »</button>
+          </div>
+        </div>
+      </div>
+      <p class="text-[11px] text-gray-500 mt-2">Napomena: Na manjim ekranima sakrivene su sporedne kolone radi preglednosti (kontakt, pozicija, e-mail, napomene).</p>
+    </section>
+  </div>
+
+  <!-- Modal -->
+  <div id="notes-modal" class="modal-overlay" onclick="closeModal()">
+    <div class="modal-content" onclick="event.stopPropagation()">
+      <h3 class="text-lg sm:text-xl font-bold accent-text mb-3 sm:mb-4">Detalji Prijave</h3>
+      <div id="modal-content-body" class="space-y-2 sm:space-y-3 text-gray-700 text-sm sm:text-base"></div>
+      <div class="mt-4 flex flex-wrap gap-2">
+        <button id="copyEmailBtn" class="chip tap"><span>📧</span>E-mail<span class="chip-btn" onclick="copyEmail(event)">Kopiraj</span></button>
+        <button id="copyPhoneBtn" class="chip tap"><span>📞</span>Telefon<span class="chip-btn" onclick="copyPhone(event)">Kopiraj</span></button>
+      </div>
+      <button class="tap mt-5 bg-red-600 text-white px-4 py-2 rounded-lg font-semibold hover:bg-red-500 transition w-full sm:w-auto" onclick="closeModal()">Zatvori</button>
+    </div>
+  </div>
+
+  <script>
+    // ---------------------- AUTORIZACIJA ----------------------
+    function checkAuthAndFetch(){
+      if(localStorage.getItem('isLoggedIn')!=='true'){ window.location.href='index.html'; }
+      else{ fetchDataAndRender(); }
+    }
+    function logout(){
+      localStorage.removeItem('isLoggedIn');
+      window.location.href='index.html';
+    }
+
+    // ---------------------- KONFIG ----------------------
+    const SHEET_ID = '1cqqyszGGPnCGRjebXutOPuNbnjW26qbRdTJlN_2zHx4';
+    const GID = '0';
+    // Pravilno formirani linkovi:
+    const GOOGLE_SHEET_URL = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:json&gid=${GID}`;
+    const CSV_FALLBACK_URL = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/export?format=csv&gid=${GID}`;
+
+    const COL_INDEX = {
+      TIMESTAMP: 0,       // A
+      NAZIV_AGENCIJE: 2,  // C
+      GRAD: 3,            // D
+      IME_PREZIME: 7,     // H
+      POZICIJA: 8,        // I
+      EMAIL: 9,           // J
+      TELEFON: 10,        // K
+      TRZISTA: 11,        // L
+      BROJ_OSOBA: 15,     // P
+      NAPOMENE: 18,       // S
+      DINNER: 19,         // T (ne koristimo za odluku)
+      SMESTAJ: 20,        // U
+      VERIFIKACIONI_LINK: 24 // Y
+    };
+
+    // UI elementi
+    const totalRegEl = document.getElementById('totalReg');
+    const totalPeopleEl = document.getElementById('totalPeople');
+    const dinnerConfirmedEl = document.getElementById('dinnerConfirmed');
+    const accommodationNeededEl = document.getElementById('accommodationNeeded');
+    const cityDistributionEl = document.getElementById('city-distribution');
+    const cityPeopleEl = document.getElementById('city-people');
+    const tableBodyEl = document.getElementById('registrations-table-body');
+    const loadingStatusEl = document.getElementById('loading-status');
+    const appContentEl = document.getElementById('appContent');
+    const loadingOverlayEl = document.getElementById('loadingOverlay');
+    const filterCityEl = document.getElementById('filterCity');
+    const filterDinnerEl = document.getElementById('filterDinner');
+    const filterAccommodationEl = document.getElementById('filterAccommodation');
+    const quickSearchEl = document.getElementById('quickSearch');
+    const pageInfoEl = document.getElementById('pageInfo');
+    const pageSizeEl = document.getElementById('pageSize');
+    const lastUpdateEl = document.getElementById('lastUpdate');
+
+    // Stanje
+    let rawRows = [];
+    let processedData = [];
+    let filteredData = [];
+    let lastModalData = null;
+    let sortState = { key:null, dir:1 }; // 1 asc, -1 desc
+    let autoTimer = null;
+
+    // Pagination state
+    let pageSize = parseInt(pageSizeEl.value,10);
+    let pageIndex = 0; // 0-based
+
+    // Fokus na pretragu sa /
+    document.addEventListener('keydown', (e)=>{
+      if(e.key==='/' && document.activeElement!==quickSearchEl){
+        e.preventDefault();
+        quickSearchEl.focus();
+      }
+    });
+
+    // ---------------------- FETCH & PARSE ----------------------
+    async function fetchDataAndRender(){
+      try{
+        const dataText = await fetchData();
+        rawRows = parseData(dataText);
+        if(rawRows.length===0){
+          loadingStatusEl.textContent='Upozorenje: Nema podataka za analizu. Provjerite Google Sheet (Share → Anyone with link).';
+          showApp();
+          return;
+        }
+        processAndRenderData(rawRows);
+        showApp();
+      }catch(err){
+        console.error('KRITIČNA GREŠKA:', err);
+        loadingStatusEl.textContent = `Greška pri učitavanju podataka: ${err.message}.`;
+        showApp();
+      }
+    }
+
+    function showApp(){
+      loadingOverlayEl.style.display='none';
+      appContentEl.classList.remove('hidden');
+      setLastUpdate();
+      setTimeout(()=>{ if(loadingStatusEl) loadingStatusEl.style.display='none'; }, 900);
+    }
+
+    async function fetchData(){
+      let response;
+      // JSON (GViz)
+      try{
+        response = await fetch(GOOGLE_SHEET_URL, {cache:'no-store'});
+        if(!response.ok) throw new Error(`JSON fetch status: ${response.status}`);
+        const t = await response.text();
+        if(t.includes('google.visualization.Query.setResponse')) return t;
+      }catch{ /* CSV fallback */ }
+
+      // CSV fallback
+      response = await fetch(CSV_FALLBACK_URL, {cache:'no-store'});
+      if(!response.ok) throw new Error(`CSV fetch status: ${response.status}`);
+      const csv = await response.text();
+      if(csv.startsWith('<!DOCTYPE')) throw new Error('Vraćen je HTML umjesto CSV-a (Sheet nije javan?).');
+      return csv;
+    }
+
+    function parseData(text){
+      let parsed=[];
+      // GViz
+      if(text.includes('google.visualization.Query.setResponse')){
+        try{
+          const jsonString = text.substring(text.indexOf('(')+1, text.lastIndexOf(')'));
+          const data = JSON.parse(jsonString);
+          if(data.table && data.table.rows?.length){
+            parsed = data.table.rows.map(r => r.c.map(c => c?.v!==undefined ? String(c.v) : (c?.f!==undefined ? String(c.f) : '')))
+              .filter(row => row.length>COL_INDEX.NAZIV_AGENCIJE && row[COL_INDEX.NAZIV_AGENCIJE].trim().length>0);
+            return parsed;
+          }
+        }catch{ /* CSV */ }
+      }
+      // CSV
+      const lines = text.split('\n').filter(x=>x.trim().length>0);
+      if(lines.length<=1) return [];
+      const rows = lines.slice(1);
+      const parseLine = (line)=>{
+        const out=[]; let cur=''; let inQ=false;
+        for(let i=0;i<line.length;i++){
+          const ch=line[i];
+          if(ch==='"'){
+            if(inQ && line[i+1]==='"'){ cur+='"'; i++; continue; }
+            inQ=!inQ;
+          }else if(ch===',' && !inQ){
+            out.push(cur.trim().replace(/^"|"$/g,'')); cur='';
+          }else{ cur+=ch; }
+        }
+        out.push(cur.trim().replace(/^"|"$/g,''));
+        return out;
+      };
+      rows.forEach(l=>{
+        const r=parseLine(l);
+        if(r.length>COL_INDEX.NAZIV_AGENCIJE && r[COL_INDEX.NAZIV_AGENCIJE].trim().length>0) parsed.push(r);
+      });
+      return parsed;
+    }
+
+    // ---------------------- OBRADA + RENDER ----------------------
+    function mapRowToObject(row){
+      const people = parseInt(row[COL_INDEX.BROJ_OSOBA])||0;
+      const isB2B = people>0;
+      const smjestajYes = (row[COL_INDEX.SMESTAJ]||'').toString().toUpperCase().includes('DA');
+
+      const cityRaw = (row[COL_INDEX.GRAD]||'').toString().trim();
+      const cityNorm = cityRaw ? cityRaw.toUpperCase() : 'NEPOZNATO';
+
+      const verify = (row[COL_INDEX.VERIFIKACIONI_LINK]||'').toString().trim();
+      const phone  = (row[COL_INDEX.TELEFON]||'').toString().trim();
+
+      return {
+        timestamp: row[COL_INDEX.TIMESTAMP]||'',
+        agency: row[COL_INDEX.NAZIV_AGENCIJE]||'',
+        city: cityRaw || 'N/A',
+        city_norm: cityNorm,
+        name: row[COL_INDEX.IME_PREZIME]||'',
+        position: row[COL_INDEX.POZICIJA]||'',
+        email: row[COL_INDEX.EMAIL]||'',
+        phone: phone,
+        markets: row[COL_INDEX.TRZISTA]||'',
+        people,
+        notes: row[COL_INDEX.NAPOMENE]||'',
+        dinner_col: row[COL_INDEX.DINNER]||'',
+        accommodation_col: row[COL_INDEX.SMESTAJ]||'',
+        verify_url: verify,
+        isB2BAttended: isB2B,
+        dinner: isB2B ? 'DA' : 'NE',
+        accommodation: smjestajYes ? 'DA' : 'NE'
+      };
+    }
+
+    function processAndRenderData(rows){
+      processedData = rows.map(mapRowToObject);
+
+      // KPI
+      const uniqueAgencies = new Set(processedData.map(o=>o.agency).filter(Boolean));
+      const totalPeople = processedData.reduce((s,o)=>s+(o.people||0),0);
+      const dinnerGuests = processedData.reduce((s,o)=>s+(o.dinner==='DA'?1:0),0);
+      const accommodationNeeded = processedData.reduce((s,o)=>s+(o.accommodation==='DA'?1:0),0);
+
+      // Gradovi (agencije i osobe)
+      const cityCounts = {};
+      const cityPeople = {};
+      const citySet = new Set();
+      processedData.forEach(o=>{
+        if(o.agency && o.city_norm && o.city_norm!=='NEPOZNATO'){
+          cityCounts[o.city_norm] = (cityCounts[o.city_norm]||0)+1;
+          cityPeople[o.city_norm] = (cityPeople[o.city_norm]||0)+(o.people||0);
+          citySet.add(o.city_norm);
+        }
+      });
+
+      // Render KPI
+      totalRegEl.textContent = uniqueAgencies.size;
+      totalPeopleEl.textContent = totalPeople;
+      dinnerConfirmedEl.textContent = dinnerGuests;
+      accommodationNeededEl.textContent = accommodationNeeded;
+
+      // Distribucije
+      renderBars(cityCounts, cityDistributionEl, uniqueAgencies.size, 'Agencije');
+      renderBars(cityPeople, cityPeopleEl, Math.max(1,totalPeople), 'Osobe');
+
+      // Filter po gradu
+      fillCityFilter(Array.from(citySet).sort());
+
+      // Tabela
+      filteredData = [...processedData];
+      pageIndex = 0;
+      renderTable();
+      updatePageInfo();
+    }
+
+    function renderBars(counts, containerEl, totalBase, label){
+      containerEl.innerHTML='';
+      const entries = Object.entries(counts).sort(([,a],[,b])=>b-a);
+      if(entries.length===0){
+        containerEl.innerHTML='<p class="text-gray-500 text-sm">Nema podataka za prikaz.</p>';
+        return;
+      }
+      entries.forEach(([city,val])=>{
+        const pct = totalBase ? ((val/totalBase)*100).toFixed(1) : '0.0';
+        containerEl.insertAdjacentHTML('beforeend', `
+          <div>
+            <div class="flex justify-between text-[11px] sm:text-xs font-medium text-gray-700">
+              <span>${city} <span class="text-gray-400">(${val})</span></span>
+              <span class="accent-text">${pct}%</span>
+            </div>
+            <div class="w-full bg-gray-200 rounded-full h-2 mt-1">
+              <div class="h-2 rounded-full" style="width:${pct}%;background:linear-gradient(90deg,var(--c-gold),var(--c-accent))"></div>
+            </div>
+          </div>
+        `);
+      });
+    }
+
+    function fillCityFilter(cities){
+      filterCityEl.innerHTML = '<option value="">Grad: Svi</option>' +
+        cities.map(c=>`<option value="${escapeAttr(c)}">${escapeHtml(c)}</option>`).join('');
+    }
+
+    // ---------------------- FILTERI / PRETRAGA ----------------------
+    function applyFilters(){
+      const dinnerF = filterDinnerEl.value;
+      const accomF  = filterAccommodationEl.value;
+      const cityF   = filterCityEl.value;
+      const q = (quickSearchEl.value||'').trim().toLowerCase();
+
+      filteredData = processedData.filter(o=>{
+        if(dinnerF && o.dinner!==dinnerF) return false;
+        if(accomF && o.accommodation!==accomF) return false;
+        if(cityF && o.city_norm!==cityF) return false;
+
+        if(q){
+          const hay = [
+            o.agency, o.name, o.city, o.city_norm,
+            o.email, o.phone, o.position
+          ].join(' ').toLowerCase();
+          if(!hay.includes(q)) return false;
+        }
+        return true;
+      });
+
+      // reset paginacije i render
+      pageIndex = 0;
+      renderTable();
+      updatePageInfo();
+    }
+
+    function filterNotes(){
+      quickSearchEl.value="";
+      filterDinnerEl.value="";
+      filterAccommodationEl.value="";
+      filterCityEl.value="";
+      filteredData = processedData.filter(o=> (o.notes||'').trim().length>0 );
+      pageIndex = 0;
+      renderTable();
+      updatePageInfo();
+    }
+
+    function resetFilters(){
+      quickSearchEl.value="";
+      filterDinnerEl.value="";
+      filterAccommodationEl.value="";
+      filterCityEl.value="";
+      filteredData = [...processedData];
+      pageIndex = 0;
+      renderTable();
+      updatePageInfo();
+    }
+
+    // ---------------------- SORTIRANJE ----------------------
+    function sortBy(key){
+      const dir = (sortState.key===key) ? -sortState.dir : 1;
+      sortState = { key, dir };
+
+      filteredData.sort((a,b)=>{
+        let va=a[key]??'', vb=b[key]??'';
+        if(typeof va==='string') va = va.toLowerCase();
+        if(typeof vb==='string') vb = vb.toLowerCase();
+        if(va<vb) return -1*dir;
+        if(va>vb) return 1*dir;
+        return 0;
+      });
+
+      // UI indikacija
+      document.querySelectorAll('.sort-btn').forEach(el=>el.classList.remove('sort-active'));
+      const th = document.querySelector(`.sort-btn[data-sort="${key}"]`);
+      if(th) th.classList.add('sort-active');
+
+      pageIndex = 0;
+      renderTable();
+      updatePageInfo();
+    }
+
+    // ---------------------- TABELA + PAGINACIJA ----------------------
+    function paginate(arr, size, index){
+      const start = index*size;
+      return arr.slice(start, start+size);
+    }
+
+    function changePageSize(val){
+      pageSize = parseInt(val,10)||25;
+      pageIndex = 0;
+      renderTable();
+      updatePageInfo();
+    }
+
+    function totalPages(){
+      return Math.max(1, Math.ceil(filteredData.length / pageSize));
+    }
+
+    function gotoPage(action){
+      const pages = totalPages();
+      if(action==='first') pageIndex = 0;
+      else if(action==='prev') pageIndex = Math.max(0, pageIndex-1);
+      else if(action==='next') pageIndex = Math.min(pages-1, pageIndex+1);
+      else if(action==='last') pageIndex = pages-1;
+      renderTable();
+      updatePageInfo();
+    }
+
+    function updatePageInfo(){
+      const pages = totalPages();
+      pageInfoEl.textContent = `Stranica ${Math.min(pages, pageIndex+1)}/${pages} • Prikazano ${Math.min(filteredData.length, (pageIndex*pageSize)+paginate(filteredData,pageSize,pageIndex).length)} od ${filteredData.length}`;
+    }
+
+    function renderTable(){
+      tableBodyEl.innerHTML='';
+      const pageRows = paginate(filteredData, pageSize, pageIndex);
+
+      if(pageRows.length===0){
+        tableBodyEl.innerHTML = `<tr><td colspan="12" class="text-center py-4 text-gray-500">Nema pronađenih prijava.</td></tr>`;
+        return;
+      }
+
+      pageRows.forEach((o,idx)=>{
+        const globalIndex = pageIndex*pageSize + idx;
+
+        const dinnerHtml = o.dinner==='DA'
+          ? '<span class="text-green-600 font-medium">DA</span>'
+          : '<span class="text-red-600 font-medium">NE</span>';
+        const accHtml = o.accommodation==='DA'
+          ? '<span class="text-green-600 font-medium">DA</span>'
+          : '<span class="text-red-600 font-medium">NE</span>';
+        const noteInd = (o.notes||'').trim().length>0
+          ? '<span class="text-yellow-600 font-bold">DA</span>' : 'NE';
+
+        const phoneClean = (o.phone||'').replace(/\s+/g,'');
+        const phoneHtml = o.phone
+          ? `<a href="tel:${escapeAttr(phoneClean)}" class="text-blue-700 hover:underline">${escapeHtml(o.phone)}</a>`
+          : 'N/A';
+
+        const emailHtml = o.email
+          ? `<a href="mailto:${escapeAttr(o.email)}" class="text-blue-700 hover:underline">${escapeHtml(o.email)}</a>`
+          : 'N/A';
+
+        tableBodyEl.insertAdjacentHTML('beforeend', `
+          <tr class="table-row">
+            <td class="px-3 sm:px-4 py-2">${globalIndex+1}</td>
+            <td class="px-3 sm:px-4 py-2">${escapeHtml(o.agency||'N/A')}</td>
+            <td class="px-3 sm:px-4 py-2">${escapeHtml(o.city||'N/A')}</td>
+            <td class="px-3 sm:px-4 py-2 hidden sm:table-cell">${escapeHtml(o.name||'N/A')}</td>
+            <td class="px-3 sm:px-4 py-2 hidden md:table-cell">${escapeHtml(o.position||'N/A')}</td>
+            <td class="px-3 sm:px-4 py-2">${phoneHtml}</td>
+            <td class="px-3 sm:px-4 py-2 hidden md:table-cell">${emailHtml}</td>
+            <td class="px-3 sm:px-4 py-2">${o.people||0}</td>
+            <td class="px-3 sm:px-4 py-2">${dinnerHtml}</td>
+            <td class="px-3 sm:px-4 py-2 hidden sm:table-cell">${accHtml}</td>
+            <td class="px-3 sm:px-4 py-2 hidden md:table-cell">${noteInd}</td>
+            <td class="px-3 sm:px-4 py-2">
+              <button onclick="showDetails(${globalIndex})" class="tap text-xs bg-blue-600 hover:bg-blue-700 text-white px-3 py-2 rounded">Detalji</button>
+            </td>
+          </tr>
+        `);
+      });
+    }
+
+    // ---------------------- MODAL ----------------------
+    function showDetails(globalIndex){
+      const o = filteredData[globalIndex];
+      if(!o) return;
+      lastModalData = o;
+
+      // verifikacioni link
+      let verifyHtml = 'N/A';
+      if(o.verify_url && /^(https?:\/\/)/i.test(o.verify_url)){
+        const safe = escapeAttr(o.verify_url);
+        verifyHtml = `<a href="${safe}" target="_blank" class="text-blue-600 hover:underline break-all">Otvori verifikaciju</a>`;
+      }else if(o.verify_url){
+        verifyHtml = escapeHtml(o.verify_url);
+      }
+
+      const phoneClean = (o.phone||'').replace(/\s+/g,'');
+      const phoneHtml = o.phone
+        ? `<a href="tel:${escapeAttr(phoneClean)}" class="text-blue-700 hover:underline">${escapeHtml(o.phone)}</a>`
+        : 'N/A';
+
+      const modalBody = document.getElementById('modal-content-body');
+      modalBody.innerHTML = `
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-3">
+          <p><strong>Agencija:</strong> ${escapeHtml(o.agency||'N/A')}</p>
+          <p><strong>Grad:</strong> ${escapeHtml(o.city||'N/A')} <span class="text-[10px] sm:text-xs text-gray-500">(norm: ${escapeHtml(o.city_norm)})</span></p>
+
+          <p><strong>Kontakt:</strong> ${escapeHtml(o.name||'N/A')}</p>
+          <p><strong>Pozicija:</strong> ${escapeHtml(o.position||'N/A')}</p>
+
+          <p><strong>E-mail:</strong> ${o.email ? `<a href="mailto:${escapeAttr(o.email)}" class="text-blue-700 hover:underline break-all">${escapeHtml(o.email)}</a>` : 'N/A'}</p>
+          <p><strong>Telefon:</strong> ${phoneHtml}</p>
+
+          <p><strong>Broj osoba (B2B):</strong> ${o.people||0}</p>
+          <p><strong>Večera:</strong> ${o.dinner}</p>
+
+          <p><strong>Smještaj:</strong> ${o.accommodation}</p>
+          <p><strong>Verifikacija:</strong> ${verifyHtml}</p>
+        </div>
+
+        <div class="mt-3">
+          <p class="mb-1"><strong>Napomene (S):</strong></p>
+          <div class="p-3 bg-gray-100 border border-gray-300 rounded-lg whitespace-pre-wrap text-sm">${escapeHtml(o.notes||'Nema napomena.')}</div>
+        </div>
+      `;
+      document.getElementById('notes-modal').style.display='flex';
+    }
+    function closeModal(){ document.getElementById('notes-modal').style.display='none'; }
+
+    // Kopiranje iz modala
+    function copyEmail(ev){
+      ev.stopPropagation();
+      if(!lastModalData?.email){ alert('Nema e-mail adrese.'); return; }
+      navigator.clipboard.writeText(lastModalData.email).then(()=>toast('E-mail kopiran.'));
+    }
+    function copyPhone(ev){
+      ev.stopPropagation();
+      if(!lastModalData?.phone){ alert('Nema telefona.'); return; }
+      navigator.clipboard.writeText(lastModalData.phone).then(()=>toast('Telefon kopiran.'));
+    }
+    function toast(msg){
+      const t=document.createElement('div');
+      t.textContent=msg;
+      t.className='fixed bottom-5 left-1/2 -translate-x-1/2 bg-gray-900 text-white text-sm px-3 py-2 rounded-lg shadow';
+      document.body.appendChild(t);
+      setTimeout(()=>{ t.remove(); }, 1600);
+    }
+
+    // ---------------------- EXPORT ----------------------
+    function downloadDataAsCSV(data){
+      if(!data?.length){ alert('Nema podataka za izvoz.'); return; }
+
+      const headers = [
+        "Timestamp","Naziv Agencije","Grad","Grad (NORMALIZOVANO)",
+        "Ime i Prezime","Pozicija/Titula","Email","Telefon","Trzista Interesa",
+        "Broj osoba (B2B)","Networking Vecera (izvedeno)","Smjestaj",
+        "Verify URL","Napomene"
+      ].map(h=>`"${h.replace(/"/g,'""')}"`).join(',');
+
+      const rows = data.map(o=>{
+        const vals = [
+          o.timestamp||'', o.agency||'', o.city||'', o.city_norm||'',
+          o.name||'', o.position||'', o.email||'', o.phone||'', o.markets||'',
+          o.people||0, o.dinner||'NE', o.accommodation||'NE',
+          o.verify_url||'', (o.notes||'').replace(/(\r\n|\n|\r)/gm,' ')
+        ].map(v=>`"${String(v).replace(/"/g,'""')}"`);
+        return vals.join(',');
+      });
+
+      const csv = headers+"\n"+rows.join("\n");
+      const BOM = "\uFEFF";
+      const blob = new Blob([BOM+csv],{type:'text/csv;charset=utf-8;'});
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `workshop_podaci_${new Date().toISOString().slice(0,10)}.csv`;
+      document.body.appendChild(a); a.click(); document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    }
+
+    function downloadProcessedJSON(){
+      if(!processedData?.length){ alert('Nema podataka za izvoz.'); return; }
+      const json = JSON.stringify(processedData, null, 2);
+      const uri = 'data:application/json;charset=utf-8,' + encodeURIComponent(json);
+      const a = document.createElement('a');
+      a.href = uri;
+      a.download = `workshop_obradjeno_${new Date().toISOString().slice(0,10)}.json`;
+      document.body.appendChild(a); a.click(); document.body.removeChild(a);
+    }
+
+    // ---------------------- AUTO REFRESH ----------------------
+    function setLastUpdate(){
+      const d = new Date();
+      lastUpdateEl.textContent = `Zadnje ažuriranje: ${d.toLocaleString()}`;
+    }
+    function toggleAutoRefresh(on){
+      if(on){
+        autoTimer = setInterval(async ()=>{
+          try{
+            const dataText = await fetchData();
+            rawRows = parseData(dataText);
+            processAndRenderData(rawRows);
+            setLastUpdate();
+          }catch(e){ console.warn('Auto-refresh nije uspio:', e.message); }
+        }, 60000);
+      }else{
+        clearInterval(autoTimer);
+        autoTimer = null;
+      }
+    }
+    async function manualRefresh(){
+      try{
+        const dataText = await fetchData();
+        rawRows = parseData(dataText);
+        processAndRenderData(rawRows);
+        setLastUpdate();
+      }catch(e){ alert('Osvježavanje nije uspjelo: '+e.message); }
+    }
+
+    // ---------------------- UTIL ----------------------
+    function escapeHtml(s){
+      return String(s).replace(/[&<>"']/g, m=>({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[m]));
+    }
+    function escapeAttr(s){
+      return String(s).replace(/"/g,'&quot;').replace(/</g,'&lt;');
+    }
+  </script>
+</body>
+</html>
