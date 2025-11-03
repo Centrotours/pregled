@@ -1,16 +1,14 @@
+Razumijem — evo kompletan fajl bez komentara, sa istim podacima i vezama kako si naveo:
+
+```html
 <!DOCTYPE html>
 <html lang="bs">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Dashboard - Workshop Analitika</title>
-
-  <!-- Tailwind (CDN) -->
   <script src="https://cdn.tailwindcss.com"></script>
-
-  <!-- Google Font -->
   <link href="https://fonts.googleapis.com/css2?family=Urbanist:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
-
   <style>
     :root{--c-accent:#06b6d4;--c-gold:#d97706}
     body{font-family:'Urbanist',sans-serif;background:#f3f4f6;color:#1f2937}
@@ -29,31 +27,23 @@
     .sort-btn{cursor:pointer}
     .sort-btn .arrow{opacity:.35}
     .sort-active .arrow{opacity:1}
-    /* Loading overlay */
     #loadingOverlay{position:fixed;inset:0;background:rgba(243,244,246,.98);z-index:2000;display:flex;align-items:center;justify-content:center;flex-direction:column}
     .spinner{width:56px;height:56px;border:6px solid #e5e7eb;border-top-color:var(--c-accent);border-radius:50%;animation:spin 1s linear infinite}
     @keyframes spin{to{transform:rotate(360deg)}}
-    /* Sticky controls on mobile */
     .sticky-controls{position:sticky;top:8px;z-index:50}
   </style>
 </head>
-
 <body class="min-h-screen p-3 sm:p-4 md:p-6" onload="checkAuthAndFetch()">
-
-  <!-- Loading overlay -->
   <div id="loadingOverlay" role="status" aria-live="polite">
     <div class="spinner"></div>
-    <p class="mt-4 text-base sm:text-lg font-semibold accent-text">Učitavanje podataka...</p>
+    <p class="mt-4 text-base sm:text-lg font-semibold accent-text" id="loading-status">Učitavanje podataka...</p>
   </div>
 
-  <!-- APP CONTENT -->
   <div id="appContent" class="hidden space-y-4 sm:space-y-6">
-    <!-- Header -->
     <header class="glass-panel rounded-xl p-3 sm:p-4 md:p-5">
       <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
         <div class="flex items-center gap-3">
-          <img src="logo.png" alt="Logo Agencije" class="h-9 w-9 sm:h-11 sm:w-11 rounded-lg object-contain"
-               onerror="this.onerror=null; this.src='https://placehold.co/44x44/06b6d4/ffffff?text=LOGO';">
+          <img src="logo.png" alt="Logo Agencije" class="h-9 w-9 sm:h-11 sm:w-11 rounded-lg object-contain" onerror="this.onerror=null; this.src='https://placehold.co/44x44/06b6d4/ffffff?text=LOGO';">
           <div>
             <h1 class="text-2xl sm:text-3xl md:text-4xl font-extrabold leading-tight">Kontrolna Tabla</h1>
             <p class="text-xs sm:text-sm font-light mt-0.5 text-gray-500">Pregled stanja prijava i ključnih metrika.</p>
@@ -66,9 +56,7 @@
       </div>
     </header>
 
-    <!-- KPI + Distribucije -->
     <section id="main-content" class="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">
-      <!-- Distribucije gradova -->
       <div class="glass-panel p-4 sm:p-5 rounded-xl order-2 lg:order-1 space-y-5">
         <div>
           <h2 class="text-lg sm:text-xl font-bold mb-3 sm:mb-4 accent-text">Prijava po Gradu (Agencije)</h2>
@@ -84,7 +72,6 @@
         </div>
       </div>
 
-      <!-- KPI -->
       <div class="glass-panel p-4 sm:p-5 rounded-xl lg:col-span-2 order-1 lg:order-2">
         <div class="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4">
           <div class="glass-panel p-4 rounded-xl">
@@ -107,7 +94,6 @@
       </div>
     </section>
 
-    <!-- Kontrole (sticky na mobitelu) -->
     <section class="sticky-controls">
       <div class="glass-panel rounded-xl p-3 sm:p-4 space-y-3">
         <div class="flex flex-col lg:flex-row gap-3 lg:items-center">
@@ -130,28 +116,19 @@
               <option value="">Grad: Svi</option>
             </select>
 
-            <button onclick="filterNotes()" class="tap bg-yellow-500 text-gray-900 font-semibold p-2 rounded-lg text-sm hover:bg-yellow-400 transition w-full sm:w-auto">
-              Napomene
-            </button>
-            <button onclick="resetFilters()" class="tap bg-red-500 text-white font-semibold p-2 rounded-lg text-sm hover:bg-red-600 transition w-full sm:w-auto">
-              Resetuj
-            </button>
+            <button onclick="filterNotes()" class="tap bg-yellow-500 text-gray-900 font-semibold p-2 rounded-lg text-sm hover:bg-yellow-400 transition w-full sm:w-auto">Napomene</button>
+            <button onclick="resetFilters()" class="tap bg-red-500 text-white font-semibold p-2 rounded-lg text-sm hover:bg-red-600 transition w-full sm:w-auto">Resetuj</button>
           </div>
 
           <div class="flex flex-col md:flex-row gap-2 md:items-center md:ml-auto w-full md:w-auto">
             <input id="quickSearch" type="text" placeholder="Pretraga: agencija/kontakt/grad/e-mail/telefon" class="tap w-full md:w-72 bg-white border border-gray-300 rounded-lg p-2 text-sm" oninput="applyFilters()" />
             <div class="flex gap-2">
-              <button onclick="downloadDataAsCSV(processedData)" class="tap w-full md:w-auto bg-green-600 text-white font-semibold p-2 rounded-lg text-sm hover:bg-green-700 transition">
-                CSV/Excel
-              </button>
-              <button onclick="downloadProcessedJSON()" class="tap w-full md:w-auto bg-blue-600 text-white font-semibold p-2 rounded-lg text-sm hover:bg-blue-700 transition">
-                JSON
-              </button>
+              <button onclick="downloadDataAsCSV(processedData)" class="tap w-full md:w-auto bg-green-600 text-white font-semibold p-2 rounded-lg text-sm hover:bg-green-700 transition">CSV/Excel</button>
+              <button onclick="downloadProcessedJSON()" class="tap w-full md:w-auto bg-blue-600 text-white font-semibold p-2 rounded-lg text-sm hover:bg-blue-700 transition">JSON</button>
             </div>
           </div>
         </div>
 
-        <!-- Auto refresh -->
         <div class="flex flex-wrap items-center gap-3 text-sm">
           <label class="inline-flex items-center gap-2">
             <input id="autoRefresh" type="checkbox" class="w-4 h-4" onchange="toggleAutoRefresh(this.checked)">
@@ -163,7 +140,6 @@
       </div>
     </section>
 
-    <!-- Tabela + sortiranje + paginacija -->
     <section class="pb-2">
       <div class="glass-panel p-3 sm:p-4 rounded-xl overflow-x-auto">
         <table class="min-w-full text-left text-xs sm:text-sm whitespace-nowrap">
@@ -188,7 +164,6 @@
           </tbody>
         </table>
 
-        <!-- Pagination -->
         <div class="flex flex-wrap items-center justify-between mt-3 gap-2">
           <div class="text-xs text-gray-600">
             <span id="pageInfo">Stranica 1/1</span> • Po stranici:
@@ -208,7 +183,6 @@
     </section>
   </div>
 
-  <!-- Modal -->
   <div id="notes-modal" class="modal-overlay" onclick="closeModal()">
     <div class="modal-content" onclick="event.stopPropagation()">
       <h3 class="text-lg sm:text-xl font-bold accent-text mb-3 sm:mb-4">Detalji Prijave</h3>
@@ -222,7 +196,6 @@
   </div>
 
   <script>
-    // ---------------------- AUTORIZACIJA ----------------------
     function checkAuthAndFetch(){
       if(localStorage.getItem('isLoggedIn')!=='true'){ window.location.href='index.html'; }
       else{ fetchDataAndRender(); }
@@ -232,30 +205,27 @@
       window.location.href='index.html';
     }
 
-    // ---------------------- KONFIG ----------------------
     const SHEET_ID = '1cqqyszGGPnCGRjebXutOPuNbnjW26qbRdTJlN_2zHx4';
     const GID = '0';
-    // Pravilno formirani linkovi:
     const GOOGLE_SHEET_URL = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:json&gid=${GID}`;
     const CSV_FALLBACK_URL = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/export?format=csv&gid=${GID}`;
 
     const COL_INDEX = {
-      TIMESTAMP: 0,       // A
-      NAZIV_AGENCIJE: 2,  // C
-      GRAD: 3,            // D
-      IME_PREZIME: 7,     // H
-      POZICIJA: 8,        // I
-      EMAIL: 9,           // J
-      TELEFON: 10,        // K
-      TRZISTA: 11,        // L
-      BROJ_OSOBA: 15,     // P
-      NAPOMENE: 18,       // S
-      DINNER: 19,         // T (ne koristimo za odluku)
-      SMESTAJ: 20,        // U
-      VERIFIKACIONI_LINK: 24 // Y
+      TIMESTAMP: 0,
+      NAZIV_AGENCIJE: 2,
+      GRAD: 3,
+      IME_PREZIME: 7,
+      POZICIJA: 8,
+      EMAIL: 9,
+      TELEFON: 10,
+      TRZISTA: 11,
+      BROJ_OSOBA: 15,
+      NAPOMENE: 18,
+      DINNER: 19,
+      SMESTAJ: 20,
+      VERIFIKACIONI_LINK: 24
     };
 
-    // UI elementi
     const totalRegEl = document.getElementById('totalReg');
     const totalPeopleEl = document.getElementById('totalPeople');
     const dinnerConfirmedEl = document.getElementById('dinnerConfirmed');
@@ -274,19 +244,16 @@
     const pageSizeEl = document.getElementById('pageSize');
     const lastUpdateEl = document.getElementById('lastUpdate');
 
-    // Stanje
     let rawRows = [];
     let processedData = [];
     let filteredData = [];
     let lastModalData = null;
-    let sortState = { key:null, dir:1 }; // 1 asc, -1 desc
+    let sortState = { key:null, dir:1 };
     let autoTimer = null;
 
-    // Pagination state
     let pageSize = parseInt(pageSizeEl.value,10);
-    let pageIndex = 0; // 0-based
+    let pageIndex = 0;
 
-    // Fokus na pretragu sa /
     document.addEventListener('keydown', (e)=>{
       if(e.key==='/' && document.activeElement!==quickSearchEl){
         e.preventDefault();
@@ -294,13 +261,12 @@
       }
     });
 
-    // ---------------------- FETCH & PARSE ----------------------
     async function fetchDataAndRender(){
       try{
         const dataText = await fetchData();
         rawRows = parseData(dataText);
         if(rawRows.length===0){
-          loadingStatusEl.textContent='Upozorenje: Nema podataka za analizu. Provjerite Google Sheet (Share → Anyone with link).';
+          if(loadingStatusEl) loadingStatusEl.textContent='Upozorenje: Nema podataka za analizu. Provjerite Google Sheet (Share → Anyone with link).';
           showApp();
           return;
         }
@@ -308,7 +274,7 @@
         showApp();
       }catch(err){
         console.error('KRITIČNA GREŠKA:', err);
-        loadingStatusEl.textContent = `Greška pri učitavanju podataka: ${err.message}.`;
+        if(loadingStatusEl) loadingStatusEl.textContent = `Greška pri učitavanju podataka: ${err.message}.`;
         showApp();
       }
     }
@@ -317,20 +283,16 @@
       loadingOverlayEl.style.display='none';
       appContentEl.classList.remove('hidden');
       setLastUpdate();
-      setTimeout(()=>{ if(loadingStatusEl) loadingStatusEl.style.display='none'; }, 900);
     }
 
     async function fetchData(){
       let response;
-      // JSON (GViz)
       try{
         response = await fetch(GOOGLE_SHEET_URL, {cache:'no-store'});
         if(!response.ok) throw new Error(`JSON fetch status: ${response.status}`);
         const t = await response.text();
         if(t.includes('google.visualization.Query.setResponse')) return t;
-      }catch{ /* CSV fallback */ }
-
-      // CSV fallback
+      }catch{}
       response = await fetch(CSV_FALLBACK_URL, {cache:'no-store'});
       if(!response.ok) throw new Error(`CSV fetch status: ${response.status}`);
       const csv = await response.text();
@@ -340,7 +302,6 @@
 
     function parseData(text){
       let parsed=[];
-      // GViz
       if(text.includes('google.visualization.Query.setResponse')){
         try{
           const jsonString = text.substring(text.indexOf('(')+1, text.lastIndexOf(')'));
@@ -350,9 +311,8 @@
               .filter(row => row.length>COL_INDEX.NAZIV_AGENCIJE && row[COL_INDEX.NAZIV_AGENCIJE].trim().length>0);
             return parsed;
           }
-        }catch{ /* CSV */ }
+        }catch{}
       }
-      // CSV
       const lines = text.split('\n').filter(x=>x.trim().length>0);
       if(lines.length<=1) return [];
       const rows = lines.slice(1);
@@ -377,18 +337,14 @@
       return parsed;
     }
 
-    // ---------------------- OBRADA + RENDER ----------------------
     function mapRowToObject(row){
       const people = parseInt(row[COL_INDEX.BROJ_OSOBA])||0;
       const isB2B = people>0;
       const smjestajYes = (row[COL_INDEX.SMESTAJ]||'').toString().toUpperCase().includes('DA');
-
       const cityRaw = (row[COL_INDEX.GRAD]||'').toString().trim();
       const cityNorm = cityRaw ? cityRaw.toUpperCase() : 'NEPOZNATO';
-
       const verify = (row[COL_INDEX.VERIFIKACIONI_LINK]||'').toString().trim();
       const phone  = (row[COL_INDEX.TELEFON]||'').toString().trim();
-
       return {
         timestamp: row[COL_INDEX.TIMESTAMP]||'',
         agency: row[COL_INDEX.NAZIV_AGENCIJE]||'',
@@ -412,14 +368,10 @@
 
     function processAndRenderData(rows){
       processedData = rows.map(mapRowToObject);
-
-      // KPI
       const uniqueAgencies = new Set(processedData.map(o=>o.agency).filter(Boolean));
       const totalPeople = processedData.reduce((s,o)=>s+(o.people||0),0);
       const dinnerGuests = processedData.reduce((s,o)=>s+(o.dinner==='DA'?1:0),0);
       const accommodationNeeded = processedData.reduce((s,o)=>s+(o.accommodation==='DA'?1:0),0);
-
-      // Gradovi (agencije i osobe)
       const cityCounts = {};
       const cityPeople = {};
       const citySet = new Set();
@@ -430,21 +382,13 @@
           citySet.add(o.city_norm);
         }
       });
-
-      // Render KPI
       totalRegEl.textContent = uniqueAgencies.size;
       totalPeopleEl.textContent = totalPeople;
       dinnerConfirmedEl.textContent = dinnerGuests;
       accommodationNeededEl.textContent = accommodationNeeded;
-
-      // Distribucije
       renderBars(cityCounts, cityDistributionEl, uniqueAgencies.size, 'Agencije');
       renderBars(cityPeople, cityPeopleEl, Math.max(1,totalPeople), 'Osobe');
-
-      // Filter po gradu
       fillCityFilter(Array.from(citySet).sort());
-
-      // Tabela
       filteredData = [...processedData];
       pageIndex = 0;
       renderTable();
@@ -479,29 +423,21 @@
         cities.map(c=>`<option value="${escapeAttr(c)}">${escapeHtml(c)}</option>`).join('');
     }
 
-    // ---------------------- FILTERI / PRETRAGA ----------------------
     function applyFilters(){
       const dinnerF = filterDinnerEl.value;
       const accomF  = filterAccommodationEl.value;
       const cityF   = filterCityEl.value;
       const q = (quickSearchEl.value||'').trim().toLowerCase();
-
       filteredData = processedData.filter(o=>{
         if(dinnerF && o.dinner!==dinnerF) return false;
         if(accomF && o.accommodation!==accomF) return false;
         if(cityF && o.city_norm!==cityF) return false;
-
         if(q){
-          const hay = [
-            o.agency, o.name, o.city, o.city_norm,
-            o.email, o.phone, o.position
-          ].join(' ').toLowerCase();
+          const hay = [o.agency, o.name, o.city, o.city_norm, o.email, o.phone, o.position].join(' ').toLowerCase();
           if(!hay.includes(q)) return false;
         }
         return true;
       });
-
-      // reset paginacije i render
       pageIndex = 0;
       renderTable();
       updatePageInfo();
@@ -529,11 +465,9 @@
       updatePageInfo();
     }
 
-    // ---------------------- SORTIRANJE ----------------------
     function sortBy(key){
       const dir = (sortState.key===key) ? -sortState.dir : 1;
       sortState = { key, dir };
-
       filteredData.sort((a,b)=>{
         let va=a[key]??'', vb=b[key]??'';
         if(typeof va==='string') va = va.toLowerCase();
@@ -542,18 +476,14 @@
         if(va>vb) return 1*dir;
         return 0;
       });
-
-      // UI indikacija
       document.querySelectorAll('.sort-btn').forEach(el=>el.classList.remove('sort-active'));
       const th = document.querySelector(`.sort-btn[data-sort="${key}"]`);
       if(th) th.classList.add('sort-active');
-
       pageIndex = 0;
       renderTable();
       updatePageInfo();
     }
 
-    // ---------------------- TABELA + PAGINACIJA ----------------------
     function paginate(arr, size, index){
       const start = index*size;
       return arr.slice(start, start+size);
@@ -588,33 +518,18 @@
     function renderTable(){
       tableBodyEl.innerHTML='';
       const pageRows = paginate(filteredData, pageSize, pageIndex);
-
       if(pageRows.length===0){
         tableBodyEl.innerHTML = `<tr><td colspan="12" class="text-center py-4 text-gray-500">Nema pronađenih prijava.</td></tr>`;
         return;
       }
-
       pageRows.forEach((o,idx)=>{
         const globalIndex = pageIndex*pageSize + idx;
-
-        const dinnerHtml = o.dinner==='DA'
-          ? '<span class="text-green-600 font-medium">DA</span>'
-          : '<span class="text-red-600 font-medium">NE</span>';
-        const accHtml = o.accommodation==='DA'
-          ? '<span class="text-green-600 font-medium">DA</span>'
-          : '<span class="text-red-600 font-medium">NE</span>';
-        const noteInd = (o.notes||'').trim().length>0
-          ? '<span class="text-yellow-600 font-bold">DA</span>' : 'NE';
-
+        const dinnerHtml = o.dinner==='DA' ? '<span class="text-green-600 font-medium">DA</span>' : '<span class="text-red-600 font-medium">NE</span>';
+        const accHtml = o.accommodation==='DA' ? '<span class="text-green-600 font-medium">DA</span>' : '<span class="text-red-600 font-medium">NE</span>';
+        const noteInd = (o.notes||'').trim().length>0 ? '<span class="text-yellow-600 font-bold">DA</span>' : 'NE';
         const phoneClean = (o.phone||'').replace(/\s+/g,'');
-        const phoneHtml = o.phone
-          ? `<a href="tel:${escapeAttr(phoneClean)}" class="text-blue-700 hover:underline">${escapeHtml(o.phone)}</a>`
-          : 'N/A';
-
-        const emailHtml = o.email
-          ? `<a href="mailto:${escapeAttr(o.email)}" class="text-blue-700 hover:underline">${escapeHtml(o.email)}</a>`
-          : 'N/A';
-
+        const phoneHtml = o.phone ? `<a href="tel:${escapeAttr(phoneClean)}" class="text-blue-700 hover:underline">${escapeHtml(o.phone)}</a>` : 'N/A';
+        const emailHtml = o.email ? `<a href="mailto:${escapeAttr(o.email)}" class="text-blue-700 hover:underline">${escapeHtml(o.email)}</a>` : 'N/A';
         tableBodyEl.insertAdjacentHTML('beforeend', `
           <tr class="table-row">
             <td class="px-3 sm:px-4 py-2">${globalIndex+1}</td>
@@ -636,13 +551,10 @@
       });
     }
 
-    // ---------------------- MODAL ----------------------
     function showDetails(globalIndex){
       const o = filteredData[globalIndex];
       if(!o) return;
       lastModalData = o;
-
-      // verifikacioni link
       let verifyHtml = 'N/A';
       if(o.verify_url && /^(https?:\/\/)/i.test(o.verify_url)){
         const safe = escapeAttr(o.verify_url);
@@ -650,31 +562,22 @@
       }else if(o.verify_url){
         verifyHtml = escapeHtml(o.verify_url);
       }
-
       const phoneClean = (o.phone||'').replace(/\s+/g,'');
-      const phoneHtml = o.phone
-        ? `<a href="tel:${escapeAttr(phoneClean)}" class="text-blue-700 hover:underline">${escapeHtml(o.phone)}</a>`
-        : 'N/A';
-
+      const phoneHtml = o.phone ? `<a href="tel:${escapeAttr(phoneClean)}" class="text-blue-700 hover:underline">${escapeHtml(o.phone)}</a>` : 'N/A';
       const modalBody = document.getElementById('modal-content-body');
       modalBody.innerHTML = `
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-3">
           <p><strong>Agencija:</strong> ${escapeHtml(o.agency||'N/A')}</p>
           <p><strong>Grad:</strong> ${escapeHtml(o.city||'N/A')} <span class="text-[10px] sm:text-xs text-gray-500">(norm: ${escapeHtml(o.city_norm)})</span></p>
-
           <p><strong>Kontakt:</strong> ${escapeHtml(o.name||'N/A')}</p>
           <p><strong>Pozicija:</strong> ${escapeHtml(o.position||'N/A')}</p>
-
           <p><strong>E-mail:</strong> ${o.email ? `<a href="mailto:${escapeAttr(o.email)}" class="text-blue-700 hover:underline break-all">${escapeHtml(o.email)}</a>` : 'N/A'}</p>
           <p><strong>Telefon:</strong> ${phoneHtml}</p>
-
           <p><strong>Broj osoba (B2B):</strong> ${o.people||0}</p>
           <p><strong>Večera:</strong> ${o.dinner}</p>
-
           <p><strong>Smještaj:</strong> ${o.accommodation}</p>
           <p><strong>Verifikacija:</strong> ${verifyHtml}</p>
         </div>
-
         <div class="mt-3">
           <p class="mb-1"><strong>Napomene (S):</strong></p>
           <div class="p-3 bg-gray-100 border border-gray-300 rounded-lg whitespace-pre-wrap text-sm">${escapeHtml(o.notes||'Nema napomena.')}</div>
@@ -684,7 +587,6 @@
     }
     function closeModal(){ document.getElementById('notes-modal').style.display='none'; }
 
-    // Kopiranje iz modala
     function copyEmail(ev){
       ev.stopPropagation();
       if(!lastModalData?.email){ alert('Nema e-mail adrese.'); return; }
@@ -699,31 +601,16 @@
       const t=document.createElement('div');
       t.textContent=msg;
       t.className='fixed bottom-5 left-1/2 -translate-x-1/2 bg-gray-900 text-white text-sm px-3 py-2 rounded-lg shadow';
-      document.body.appendChild(t);
-      setTimeout(()=>{ t.remove(); }, 1600);
+      document.body.appendChild(t); setTimeout(()=>{ t.remove(); },1600);
     }
 
-    // ---------------------- EXPORT ----------------------
     function downloadDataAsCSV(data){
       if(!data?.length){ alert('Nema podataka za izvoz.'); return; }
-
-      const headers = [
-        "Timestamp","Naziv Agencije","Grad","Grad (NORMALIZOVANO)",
-        "Ime i Prezime","Pozicija/Titula","Email","Telefon","Trzista Interesa",
-        "Broj osoba (B2B)","Networking Vecera (izvedeno)","Smjestaj",
-        "Verify URL","Napomene"
-      ].map(h=>`"${h.replace(/"/g,'""')}"`).join(',');
-
+      const headers = ["Timestamp","Naziv Agencije","Grad","Grad (NORMALIZOVANO)","Ime i Prezime","Pozicija/Titula","Email","Telefon","Trzista Interesa","Broj osoba (B2B)","Networking Vecera (izvedeno)","Smjestaj","Verify URL","Napomene"].map(h=>`"${h.replace(/"/g,'""')}"`).join(',');
       const rows = data.map(o=>{
-        const vals = [
-          o.timestamp||'', o.agency||'', o.city||'', o.city_norm||'',
-          o.name||'', o.position||'', o.email||'', o.phone||'', o.markets||'',
-          o.people||0, o.dinner||'NE', o.accommodation||'NE',
-          o.verify_url||'', (o.notes||'').replace(/(\r\n|\n|\r)/gm,' ')
-        ].map(v=>`"${String(v).replace(/"/g,'""')}"`);
+        const vals = [o.timestamp||'', o.agency||'', o.city||'', o.city_norm||'', o.name||'', o.position||'', o.email||'', o.phone||'', o.markets||'', o.people||0, o.dinner||'NE', o.accommodation||'NE', o.verify_url||'', (o.notes||'').replace(/(\r\n|\n|\r)/gm,' ')].map(v=>`"${String(v).replace(/"/g,'""')}"`);
         return vals.join(',');
       });
-
       const csv = headers+"\n"+rows.join("\n");
       const BOM = "\uFEFF";
       const blob = new Blob([BOM+csv],{type:'text/csv;charset=utf-8;'});
@@ -745,7 +632,6 @@
       document.body.appendChild(a); a.click(); document.body.removeChild(a);
     }
 
-    // ---------------------- AUTO REFRESH ----------------------
     function setLastUpdate(){
       const d = new Date();
       lastUpdateEl.textContent = `Zadnje ažuriranje: ${d.toLocaleString()}`;
@@ -774,7 +660,6 @@
       }catch(e){ alert('Osvježavanje nije uspjelo: '+e.message); }
     }
 
-    // ---------------------- UTIL ----------------------
     function escapeHtml(s){
       return String(s).replace(/[&<>"']/g, m=>({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[m]));
     }
@@ -784,3 +669,4 @@
   </script>
 </body>
 </html>
+```
